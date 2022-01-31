@@ -1,0 +1,187 @@
+import java_cup.runtime.*;
+import java.io.*;
+import java.util.*;
+
+parser code {:
+    public static void main (String[] args) {
+        try {
+            File f = new File(args[0]);
+            String fileName = f.getName();
+            String fileNameWithoutExt = fileName;
+            if (fileName.indexOf(".") > 0) {
+               fileNameWithoutExt = fileName.substring(0, fileName.lastIndexOf("."));
+            }
+            FileReader fileReader = new FileReader(args[0]);
+            Lexer lexer = new Lexer(fileReader);
+            System.out.println("Analyse lexicale...");
+            Parser parser = new Parser(lexer);
+            try {
+               System.out.println("Analyse syntaxique...");
+               DeclarationProgramme program = (DeclarationProgramme)parser.parse().value;
+               try{
+                    System.out.println("Analyse sémantique...");
+                    AnalyseurSemantique as = new AnalyseurSemantique();
+                    program.accept(as);
+                    try {
+                        System.out.println("Production du code...");
+                        CodeProduction cp = new CodeProduction();
+                        program.accept(cp);
+                        cp.toJasminFile(fileNameWithoutExt);
+                    } catch (Exception e) {
+                        System.out.print("Une erreur est survenue durant la production du code...");
+                        System.out.println(e.getMessage());
+                    }
+               } catch (Exception e) {
+                   System.out.print("Une erreur est survenue durant l'analyse sémantique...");
+                   System.out.println(e.getMessage());
+               }
+            } catch (Exception e) {
+                System.out.print("Une erreur est survenue durant l'analyse syntaxique...");
+                System.out.println(e.getMessage());
+            }
+        } catch (Exception e) {
+            System.out.println("Le fichier n'est pas valide.");
+        }
+    }
+:}
+
+action code {:
+    HashMap<String, Type> vars = new HashMap<>();
+:}
+
+terminal PRG, STARTPRG, ENDPRG, CONSTANT, SEMICOLON, STARTFUNC, ENDFUNC, OPENPARENT;
+terminal CLOSEPARENT, COMMA, EQUAL, DOUBLEPOINTS, OPENBRACK, CLOSEBRACK;
+terminal READ, WRITE, RETURN, IF, THEN, ELSE, ENDIF, WHILE, DO, ENDWHILE;
+terminal FOR, FROM, TO, ENDFOR, TRUE, FALSE,  PLUS, MINUS, TIMES, DIVIDE;
+terminal EQUALS, DIFF, INF, INFEQUAL, SUP, SUPEQUAL, AND, OR, TILDA, NOT;
+
+terminal String IDENT, STRINGCONST, TINTEGER, TBOOLEAN;
+terminal int INTEGERCONST;
+
+// Non terminal rules that return a RESULT value
+non terminal DeclarationProgramme program, header;
+non terminal Bloc declar_lst, body;
+non terminal ArrayList<Instruction> instr_lst, declars, declar_var;
+non terminal Instruction declar_const;
+non terminal Expression expr, access, operand;
+non terminal Pour for_instr;
+non terminal TantQue while_instr;
+non terminal return_instr;
+non terminal Instruction cond_instr;
+non terminal Instruction write_instr;
+non terminal Lire read_instr;
+non terminal Instruction instr, declar;
+non terminal Affectation assign;
+non terminal index;
+non terminal Unaire op_una;
+non terminal Binaire op_bin;
+
+non terminal ArrayList<String> l_ident;
+non terminal Type type;
+non terminal Type typebase;
+
+// Precedences
+precedence left PLUS, MINUS, TIMES, DIVIDE, EQUALS, DIFF;
+precedence left INF, SUP, INFEQUAL, SUPEQUAL, AND, OR, DOUBLEPOINTS;
+precedence right TILDA, NOT;
+
+program           ::= header:p declar_lst:dec STARTPRG body:instructions ENDPRG
+                    {:
+                        p.setDeclarations(dec);
+                        p.setInstructions(instructions);
+                        RESULT = p;
+                    :};
+header            ::= PRG IDENT:id {: RESULT = new DeclarationProgramme(id, vars, "", idleft, idright); :};
+declar_lst        ::=  declars:decList {: RESULT = new Bloc(decList, "", decListleft, decListright); :};
+declars           ::= {: RESULT = new ArrayList<Instruction>(); :}
+                      | declars:decList declar:dec
+                      {:
+                          ArrayList<Instruction> decs = new ArrayList<Instruction>(decList);
+                          if(dec != null) {
+                              decs.add(dec);
+                          }
+                          RESULT = decs;
+                      :};
+declar            ::=   declar_var:dv {: RESULT = null; :}
+                      | declar_const:deconst {: RESULT = deconst; :};
+declar_var        ::= type:ty l_ident:ids SEMICOLON {:
+                                        ArrayList<Instruction> decs = new ArrayList<>();
+                                        for (String id : ids) {
+                                            if(vars.containsKey(id)) {
+                                                throw new RuntimeException("La variable a déjà été déclaré.");
+                                            }
+                                            vars.put(id, ty);
+                                        }
+                            :};
+l_ident           ::= IDENT:id {:
+                                    ArrayList<String> ids = new ArrayList<>();
+                                    ids.add(id);
+                                    RESULT = ids;
+                               :}
+                      | l_ident:ids COMMA IDENT:id {:
+                          ArrayList<String> _ids = new ArrayList<>(ids);
+                          _ids.add(id);
+                          RESULT = _ids;
+                        :};
+type              ::= typebase:t {: RESULT = t; :};
+typebase          ::= TINTEGER:ti {: RESULT = new TypeInteger("", tileft, tiright); :}
+                      | TBOOLEAN:tb {: RESULT = new TypeBooleen("", tbleft, tbright); :};
+declar_const      ::= CONSTANT:c type:ty IDENT:id EQUAL expr:exp SEMICOLON   {:
+                            if(vars.containsKey(id)) {
+                                throw new RuntimeException("La constante a déjà été déclaré.");
+                            }
+                            vars.put(id, ty);
+                            RESULT = new Affectation(new Idf(ty, id, "", idleft, idright), exp, "", cleft, cright);
+:};
+expr              ::= expr:l op_bin:op expr:r
+                      {:
+                         // build binary expression
+                         op.lierGauche(l);
+                         op.lierDroite(r);
+                         RESULT = op;
+                      :}
+                      | op_una:op expr:r {: op.lierDroite(r); RESULT = op;:}
+                      | OPENPARENT:opa expr:c CLOSEPARENT {: RESULT = new Parentheses(c, "", opaleft, oparight); :}
+                      | operand:op {: RESULT = op; :};
+op_bin            ::=   PLUS:o     {: RESULT = new Addition("", oleft, oright); :}
+                      | MINUS:o    {: RESULT = new Soustraction("", oleft, oright);  :}
+                      | TIMES:o    {: RESULT = new Multiplication("", oleft, oright); :}
+                      | DIVIDE:o   {: RESULT = new Division("", oleft, oright); :}
+                      | EQUALS:o   {: RESULT = new Egal("", oleft, oright); :}
+                      | DIFF:o     {: RESULT = new Different("", oleft, oright);:}
+                      | INF:o      {: RESULT = new Inferieur("", oleft, oright); :}
+                      | SUP:o      {: RESULT = new Superieur("", oleft, oright); :}
+                      | INFEQUAL:o {: RESULT = new InferieurEgal("", oleft, oright); :}
+                      | SUPEQUAL:o {: RESULT = new SuperieurEgal("", oleft, oright); :}
+                      | AND:o      {: RESULT = new And("", oleft, oright); :}
+                      | OR:o       {: RESULT = new Or("", oleft, oright); :};
+op_una            ::= TILDA:o      {: RESULT = new Tilda("", oleft, oright); :}
+                      | NOT:o        {: RESULT = new Non("", oleft, oright); :};
+                      //| MINUS:o      {: RESULT = new Minus("", oleft, oright); :};
+operand           ::= access:access       {: RESULT = access; :}
+                      | INTEGERCONST:ib   {: RESULT = new Nombre(ib, "", ibleft, ibright); :}
+                      | TRUE:ib            {: RESULT = new Booleen(true, "", ibleft, ibright);  :}
+                      | FALSE:ib           {: RESULT = new Booleen(false, "", ibleft, ibright); :};
+access            ::= IDENT:id   {: RESULT = new Idf(vars.get(id), id, "", idleft, idright); :};
+body              ::= instr_lst:instructions {: RESULT = new Bloc(instructions, "", instructionsleft, instructionsright); :};
+instr_lst         ::= {: RESULT = new ArrayList<Instruction>(); :}
+                      | instr_lst:instructionList instr:instruction
+                      {:
+                        ArrayList<Instruction> instructions = new ArrayList<Instruction>(instructionList);
+                        instructions.add(instruction);
+                        RESULT = instructions;
+                      :};
+instr             ::= assign:inst         {: RESULT = inst; :}
+                      | write_instr:inst  {: RESULT = inst; :}
+                      | read_instr:inst   {: RESULT = inst; :}
+                      | cond_instr:inst   {: RESULT = inst; :}
+                      | while_instr:inst  {: RESULT = inst; :}
+                      | for_instr:inst    {: RESULT = inst; :};
+assign            ::= access:dest EQUAL:e expr:src SEMICOLON {: RESULT = new Affectation(dest, src, "", eleft, eright); :};
+write_instr       ::= WRITE:w expr:src SEMICOLON {: RESULT = new Ecrire(src, "", wleft, wright); :}
+                      | WRITE:w STRINGCONST:strc SEMICOLON  {: RESULT  = new EcrireStringConstante(strc, "", wleft, wright);  :};
+read_instr        ::= READ:r IDENT:id SEMICOLON {: RESULT = new Lire(new Idf(vars.get(id), id, "", idleft, idright), "", rleft, rright);  :};
+cond_instr        ::= IF:i expr:exp THEN body:tbody ELSE body:ebody ENDIF {: RESULT = new SiSinon(exp, tbody, ebody, "", ileft, iright);  :}
+                      | IF:i expr:exp THEN body:tbody ENDIF {: RESULT = new Si(exp, tbody, "", ileft, iright);  :};
+while_instr       ::= WHILE:w expr:exp DO body:bo ENDWHILE {: RESULT = new TantQue(exp, bo, "", wleft, wright); :};
+for_instr         ::= FOR:f IDENT:id FROM expr:from TO expr:to DO body:bo ENDFOR {: RESULT = new Pour(new Idf(vars.get(id), id, "", idleft, idright), from, to, bo, "", fleft, fright); :};

@@ -1,0 +1,4 @@
+programme Demo3
+debutprg
+    ecrire "Hello World !";
+finprg

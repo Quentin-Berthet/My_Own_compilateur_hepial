@@ -1,0 +1,13 @@
+programme Demo2
+    entier x;
+    entier i;
+    constante booleen afficher = vrai;
+debutprg
+    si afficher alors
+        ecrire "Hello World!";
+    finsi
+    pour i allantde 0 a 5 faire
+        x = i*i;
+        ecrire x;
+    finpour
+finprg

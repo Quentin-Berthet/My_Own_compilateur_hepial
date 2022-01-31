@@ -1,0 +1,276 @@
+// Programme de test du compilateur réalisé par Théo Pirkl et Lucas Pallud
+programme Demo1
+  entier n, m, x;
+  booleen ktemp;
+debutprg
+  //Test écrire string
+  ecrire "Test écrire chaîne de caractères";
+
+  //Test écrire expr
+  ecrire "Test écrire expression : 1";
+  ecrire 1;
+
+  ecrire "------------------";
+
+  //Test condition
+  si vrai alors
+    ecrire "Test condition ok";
+  finsi
+
+  //Test condition - sinon
+  si faux alors
+    ecrire "Test condition - sinon pas ok";
+  sinon
+    ecrire "Test condition - sinon ok";
+  finsi
+
+  ecrire "------------------";
+
+  //Test égalité - entier
+  si 1 == 1 alors
+    ecrire "Test égalité - entier ok";
+  sinon
+    ecrire "Test égalité - entier pas ok";
+  finsi
+
+  //Test égalité - booléen
+  si vrai == faux alors
+    ecrire "Test égalité - booléen pas ok";
+  sinon
+    ecrire "Test égalité - booléen ok";
+  finsi
+
+  //Test non égalité - entier
+  si 1 <> 1 alors
+    ecrire "Test non égalité - entier pas ok";
+  sinon
+    ecrire "Test non égalité - entier ok";
+  finsi
+  //Test non égalité - booléen
+  si vrai <> faux alors
+    ecrire "Test non égalité - booléen ok";
+  sinon
+    ecrire "Test non égalité - booléen pas ok";
+  finsi
+
+  ecrire "------------------";
+
+  //Test addition
+  si 2 == 1 + 1 alors
+    ecrire "Test addition ok";
+  sinon
+    ecrire "Test addition pas ok";
+  finsi
+
+  //Test soustraction
+  si 1 == 2 - 1 alors
+    ecrire "Test soustraction ok";
+  sinon
+    ecrire "Test soustraction pas ok";
+  finsi
+
+  //Test multiplication
+  si 15 == 3*5 alors
+    ecrire "Test multiplication ok";
+  sinon
+    ecrire "Test multiplication pas ok";
+  finsi
+
+  //Test division
+  si 3 == 15/5 alors
+    ecrire "Test division ok";
+  sinon
+    ecrire "Test division pas ok";
+  finsi
+
+  //Test paranthèse - entier
+  si (5 * (6 - 2)) == 20 alors
+    ecrire "Test paranthèse - entier ok";
+  sinon
+    ecrire "Test paranthèse - entier pas ok";
+  finsi
+
+  ecrire "------------------";
+
+  //Test et - booléen
+  si vrai et faux alors
+    ecrire "Test et - booléen pas ok";
+  sinon
+    ecrire "Test et - booléen ok";
+  finsi
+
+  //Test non - booléen
+  si non faux alors
+    ecrire "Test non - booléen ok";
+  sinon
+    ecrire "Test non - booléen pas ok";
+  finsi
+
+  //Test ou - booléen
+  si vrai ou faux alors
+    ecrire "Test ou - booléen ok";
+  sinon
+    ecrire "Test ou - booléen pas ok";
+  finsi
+
+  //Test paranthèse - booléen
+  si (faux et vrai) ou vrai alors
+    ecrire "Test paranthèse - booléen ok";
+  sinon
+    ecrire "Test paranthèse - booléen pas ok";
+  finsi
+
+  ecrire "------------------";
+
+    // Test for
+    n = 0;
+    pour m allantde 1 a 3 faire
+        n = n + 1;
+    finpour
+    si (n == 3) alors
+        ecrire "Test boucle simple ok";
+    sinon
+        ecrire "Test boucle simple pas ok";
+    finsi
+
+    // Test for imbriqué
+    n = 0;
+    pour m allantde 1 a 3 faire
+        pour x allantde 1 a 17 faire
+            n = n + 1;
+        finpour
+    finpour
+    si (n == 51) alors
+        ecrire "Test for imbrique ok";
+    sinon
+        ecrire "Test for imbrique pas ok";
+    finsi
+
+    // Test while
+    ktemp = faux;
+    n = 0;
+    tantque n < 15 faire
+        ktemp = non ktemp;
+        n = n + 1;
+    fintantque
+    si (ktemp == vrai) alors
+        ecrire "Test while ok";
+    sinon
+        ecrire "Test while pas ok";
+    finsi
+
+    ecrire "------------------";
+
+    // Test assignation
+    n = 2; // Seuillage obligatoire
+    n = n + n + 3;
+    si n == 7 alors
+        ecrire "Test assignation multiple ok";
+    sinon
+        ecrire "Test assignation mulitple pas ok";
+    finsi
+
+    // Test assignation priorité opération
+    n = 2;
+    n = (n + 1) * (n + 3);
+    si n == 15 alors
+        ecrire "Test assignation avec priorite ok";
+    sinon
+        ecrire "Test assignation avec priorite pas ok";
+    finsi
+
+    // Test assignation priorité opération 2
+    n = 2;
+    n = (n * 2) * (n * 3);
+    si n == 24 alors
+        ecrire "Test assignation avec priorite 2 ok";
+    sinon
+        ecrire "Test assignation avec priorite 2 pas ok";
+    finsi
+
+    ecrire "------------------";
+
+    // Test assignation inférieur
+    n = 2;
+    si n < 3 alors
+        ecrire "Test inferieur ok";
+    sinon
+        ecrire "Test inferieur pas ok";
+    finsi
+    si 0 < 3 alors
+        ecrire "Test inferieur 2 ok";
+    sinon
+        ecrire "Test inferieur 2 pas ok";
+    finsi
+
+    // Test Inferieur Egal
+    n = 2;
+    m = 3;
+    pour x allantde 0 a 1 faire
+        si n <= m alors
+            ecrire "Test inferieur-egal ok";
+        sinon
+            ecrire "Test inferieur-egal pas ok";
+        finsi
+        m = m - 1;
+    finpour
+
+    // Test superieur
+    n = 50000;
+    m = 50000;
+    si n > m alors
+        ecrire "Test superieur pas ok";
+    sinon
+        ecrire "Test superieur ok";
+    finsi
+    n = n + 1;
+    si n > m alors
+        ecrire "Test superieur ok";
+    sinon
+        ecrire "Test superieur pas ok";
+    finsi
+
+    // Test Superieur Egal
+    n = 3;
+    m = 3;
+    pour x allantde 0 a 1 faire
+        si n >= m alors
+            ecrire "Test superieur-egal ok";
+        sinon
+            ecrire "Test superieur-egal pas ok";
+        finsi
+        n = n + 1;
+    finpour
+
+    ecrire "------------------";
+
+    // Test lecture
+    n = 5;
+    pour x allantde 0 a 2 faire
+        ecrire "Merci de taper le chiffre indiqué à la ligne suivante, suivi de la touche entrée";
+        m = 5 + x;
+        ecrire m;
+        lire n;
+        si n == 5 + x alors
+            ecrire "Test lecture entier ok";
+        sinon
+            ecrire "Test lecture entier pas ok";
+        finsi
+    finpour
+
+    ecrire "Merci de taper 'true' suivi de la touche entrée";
+    lire ktemp;
+    si ktemp alors
+        ecrire "Test lecture booleen ok";
+    sinon
+        ecrire "Test lecture booleen pas ok";
+    finsi
+
+    ecrire "Merci de taper 'false' suivi de la touche entrée";
+    lire ktemp;
+    si non ktemp alors
+        ecrire "Test lecture booleen ok";
+    sinon
+        ecrire "Test lecture booleen pas ok";
+    finsi
+finprg
